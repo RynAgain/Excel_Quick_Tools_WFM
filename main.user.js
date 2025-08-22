@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Excel Quick Tools WFM
 // @namespace    http://Tampermonkey.net/
-// @version      0.145
+// @version      0.146
 // @description  Excel tools and utilities for WFM editor page with modular UI system
 // @match        https://*.cam.wfm.amazon.dev/editor*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js
@@ -10,7 +10,7 @@
 // @require      https://github.com/RynAgain/Excel_Quick_Tools_WFM/raw/main/excelEditFun.js
 // @require      https://github.com/RynAgain/Excel_Quick_Tools_WFM/raw/main/preview.js
 // @require      https://github.com/RynAgain/Excel_Quick_Tools_WFM/raw/main/splitBy.js
-// @require      https://github.com/RynAgain/Excel_Quick_Tools_WFM/raw/main/splitToUpload.html
+// @require      https://github.com/RynAgain/Excel_Quick_Tools_WFM/raw/main/splitToUpload.js
 // @require      https://github.com/RynAgain/Excel_Quick_Tools_WFM/raw/main/dailyBuyReport.js
 // @require      https://github.com/RynAgain/Excel_Quick_Tools_WFM/raw/main/sellerCustomUploads.js
 
