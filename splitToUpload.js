@@ -1,4 +1,3 @@
-
 //split to upload
 (function() {
   'use strict';
@@ -453,12 +452,32 @@
                 let str = String(val).trim();
 
                 // Excel serial date (days since 1899-12-30)
-                if (!isNaN(str) && Number(str) > 20000 && Number(str) < 60000) {
+                // DEBUG: Log potential Excel serial dates for diagnosis
+                if (!isNaN(str)) {
+                  const numVal = Number(str);
+                  if (numVal > 1 && numVal < 3000000) { // Broad range for logging
+                    console.log(`[DEBUG] Potential Excel serial date detected: ${str} (${numVal})`);
+                    if (numVal > 2958465) {
+                      console.log(`[DEBUG] Excel serial date too large (> 2958465): ${numVal} - would be REJECTED by current logic`);
+                    } else if (numVal < 1) {
+                      console.log(`[DEBUG] Excel serial date too small (< 1): ${numVal} - would be REJECTED by current logic`);
+                    } else {
+                      console.log(`[DEBUG] Excel serial date in valid range (1-2958465): ${numVal} - would be ACCEPTED`);
+                    }
+                  }
+                }
+                
+                if (!isNaN(str) && Number(str) >= 1 && Number(str) <= 2958465) {
+                  console.log(`[DEBUG] Processing Excel serial date: ${str}`);
                   // Excel's day 1 is 1899-12-31, but JS Date epoch is 1970-01-01
                   // Excel's 0 is 1899-12-30 (due to Lotus 1-2-3 bug)
                   let base = new Date(Date.UTC(1899, 11, 30));
                   let dt = new Date(base.getTime() + Number(str) * 86400000);
-                  if (!isNaN(dt)) return dt.toISOString().slice(0, 10);
+                  if (!isNaN(dt)) {
+                    const result = dt.toISOString().slice(0, 10);
+                    console.log(`[DEBUG] Excel serial date ${str} converted to: ${result}`);
+                    return result;
+                  }
                 }
 
                 // Already in YYYY-MM-DD
