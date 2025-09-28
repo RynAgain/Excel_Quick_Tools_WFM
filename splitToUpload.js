@@ -80,7 +80,30 @@
             overflow-y: auto;
             max-height: 80vh;
           }
-          `;
+          #split-to-upload-metadata-section textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 7px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 13px;
+            line-height: 1.4;
+          }
+          #split-to-upload-metadata-header:hover {
+            background-color: #f8f9fa;
+          }
+          #split-to-upload-metadata-toggle.collapsed {
+            transform: rotate(-90deg);
+          }
+          .metadata-validation-error {
+            color: #dc3545;
+            font-weight: 500;
+          }
+          .metadata-validation-success {
+            color: #28a745;
+            font-weight: 500;
+          }
+        `;
           document.head.appendChild(style);
         }
 
@@ -185,6 +208,41 @@
           </select>
           <label for="split-to-upload-suffix">File name suffix</label>
           <input type="text" id="split-to-upload-suffix" value="upload" aria-label="File name suffix" />
+          
+          <!-- Metadata Configuration Section -->
+          <div id="split-to-upload-metadata-section" style="margin-bottom: 12px;">
+            <div id="split-to-upload-metadata-header" style="display: flex; align-items: center; cursor: pointer; padding: 8px 0; border-bottom: 1px solid #e0e0e0;">
+              <span id="split-to-upload-metadata-toggle" style="margin-right: 8px; font-size: 14px; color: #004E36; transition: transform 0.2s;">▼</span>
+              <label style="margin: 0; font-weight: 500; flex: 1; cursor: pointer;">Metadata Configuration</label>
+              <span style="font-size: 12px; color: #666;">Click to expand</span>
+            </div>
+            
+            <div id="split-to-upload-metadata-content" style="padding: 12px 0; display: none;">
+              <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; margin-bottom: 12px; font-size: 13px; color: #666;">
+                <strong>Info:</strong> These values control the metadata line in generated upload files. Defaults are provided but can be customized as needed.
+              </div>
+              
+              <label for="split-to-upload-template-type">Template Type</label>
+              <input type="text" id="split-to-upload-template-type" value="TemplateType=fptcustom" placeholder="TemplateType=fptcustom" />
+              
+              <label for="split-to-upload-version">Version</label>
+              <input type="text" id="split-to-upload-version" value="Version=2025.0401" placeholder="Version=2025.0401" />
+              
+              <label for="split-to-upload-signature">Template Signature</label>
+              <input type="text" id="split-to-upload-signature" value="TemplateSignature=Rk9PRA==" placeholder="TemplateSignature=Rk9PRA==" />
+              
+              <label for="split-to-upload-settings">Settings</label>
+              <textarea id="split-to-upload-settings" rows="3" style="resize: vertical; font-family: monospace; font-size: 13px;" placeholder="settings=attributeRow=3&contentLanguageTag=en_US...">settings=attributeRow=3&contentLanguageTag=en_US&dataRow=4&feedType=113&headerLanguageTag=en_US&isEdit=false&isProcessingSummary=false&labelRow=2&metadataVersion=MatprodVm9MVFByb2RfMTIzNA%3D%3D&primaryMarketplaceId=amzn1.mp.o.ATVPDKIKX0DER&ptds=Rk9PRA%3D%3D&reportProvenance=false&templateIdentifier=5dd18c07-9366-4278-8b7c-ed2710400e03&timestamp=2025-04-01T13%3A22%3A35.302Z</textarea>
+              
+              <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button type="button" id="split-to-upload-metadata-reset" style="background: #6c757d; flex: 1;">Reset to Defaults</button>
+                <button type="button" id="split-to-upload-metadata-validate" style="background: #004E36; flex: 1;">Validate Settings</button>
+              </div>
+              
+              <div id="split-to-upload-metadata-status" style="font-size: 12px; margin-top: 8px; min-height: 16px;"></div>
+            </div>
+          </div>
+          
           <button id="split-to-upload-go" disabled aria-label="Split and download zip">Split & Download Zip</button>
           <button id="split-to-upload-uploadsonly" disabled aria-label="Download upload files only" style="margin-top:6px;">Download Upload Files Only</button>
           <button id="split-to-upload-midsonly" disabled aria-label="Download MID lists only" style="margin-top:6px;">Download MID Lists Only</button>
@@ -208,6 +266,68 @@
         let splitByMID = false;
         let mapData = null;
         const MAP_STORAGE_KEY = "splitToUploadFiles_mapData";
+        const METADATA_STORAGE_KEY = "splitToUploadFiles_metadata";
+        
+        // Default metadata structure
+        const DEFAULT_METADATA = {
+          templateType: "TemplateType=fptcustom",
+          version: "Version=2025.0401",
+          signature: "TemplateSignature=Rk9PRA==",
+          settings: "settings=attributeRow=3&contentLanguageTag=en_US&dataRow=4&feedType=113&headerLanguageTag=en_US&isEdit=false&isProcessingSummary=false&labelRow=2&metadataVersion=MatprodVm9MVFByb2RfMTIzNA%3D%3D&primaryMarketplaceId=amzn1.mp.o.ATVPDKIKX0DER&ptds=Rk9PRA%3D%3D&reportProvenance=false&templateIdentifier=5dd18c07-9366-4278-8b7c-ed2710400e03&timestamp=2025-04-01T13%3A22%3A35.302Z"
+        };
+        
+        // Metadata state management functions
+        function loadMetadataFromStorage() {
+          try {
+            const saved = localStorage.getItem(METADATA_STORAGE_KEY);
+            return saved ? JSON.parse(saved) : DEFAULT_METADATA;
+          } catch (e) {
+            return DEFAULT_METADATA;
+          }
+        }
+        
+        function saveMetadataToStorage(metadata) {
+          try {
+            localStorage.setItem(METADATA_STORAGE_KEY, JSON.stringify(metadata));
+          } catch (e) {
+            console.warn('Failed to save metadata configuration');
+          }
+        }
+        
+        function validateMetadata(metadata) {
+          const errors = [];
+          if (!metadata.templateType.startsWith('TemplateType=')) {
+            errors.push('Template Type must start with "TemplateType="');
+          }
+          if (!metadata.version.startsWith('Version=')) {
+            errors.push('Version must start with "Version="');
+          }
+          if (!metadata.signature.startsWith('TemplateSignature=')) {
+            errors.push('Template Signature must start with "TemplateSignature="');
+          }
+          if (!metadata.settings.startsWith('settings=')) {
+            errors.push('Settings must start with "settings="');
+          }
+          return errors;
+        }
+        
+        function resetMetadataToDefaults() {
+          const templateTypeInput = root.querySelector('#split-to-upload-template-type');
+          const versionInput = root.querySelector('#split-to-upload-version');
+          const signatureInput = root.querySelector('#split-to-upload-signature');
+          const settingsInput = root.querySelector('#split-to-upload-settings');
+          const statusDiv = root.querySelector('#split-to-upload-metadata-status');
+          
+          templateTypeInput.value = DEFAULT_METADATA.templateType;
+          versionInput.value = DEFAULT_METADATA.version;
+          signatureInput.value = DEFAULT_METADATA.signature;
+          settingsInput.value = DEFAULT_METADATA.settings;
+          
+          saveMetadataToStorage(DEFAULT_METADATA);
+          statusDiv.textContent = 'Reset to default values';
+          statusDiv.className = 'metadata-validation-success';
+        }
+        
         // Try to load persisted map on panel load
         (function loadPersistedMap() {
           try {
@@ -221,6 +341,75 @@
             }
           } catch (e) {}
         })();
+        
+        // Load persisted metadata on panel load
+        (function loadPersistedMetadata() {
+          const metadata = loadMetadataFromStorage();
+          const templateTypeInput = root.querySelector('#split-to-upload-template-type');
+          const versionInput = root.querySelector('#split-to-upload-version');
+          const signatureInput = root.querySelector('#split-to-upload-signature');
+          const settingsInput = root.querySelector('#split-to-upload-settings');
+          
+          templateTypeInput.value = metadata.templateType;
+          versionInput.value = metadata.version;
+          signatureInput.value = metadata.signature;
+          settingsInput.value = metadata.settings;
+        })();
+        
+        // Metadata section event handlers
+        const metadataHeader = root.querySelector('#split-to-upload-metadata-header');
+        const metadataContent = root.querySelector('#split-to-upload-metadata-content');
+        const metadataToggle = root.querySelector('#split-to-upload-metadata-toggle');
+        const metadataResetBtn = root.querySelector('#split-to-upload-metadata-reset');
+        const metadataValidateBtn = root.querySelector('#split-to-upload-metadata-validate');
+        const metadataStatus = root.querySelector('#split-to-upload-metadata-status');
+        
+        // Toggle metadata section
+        metadataHeader.addEventListener('click', function() {
+          const isCollapsed = metadataContent.style.display === 'none';
+          metadataContent.style.display = isCollapsed ? 'block' : 'none';
+          metadataToggle.classList.toggle('collapsed', !isCollapsed);
+        });
+        
+        // Save metadata on input change
+        function saveCurrentMetadata() {
+          const metadata = {
+            templateType: root.querySelector('#split-to-upload-template-type').value,
+            version: root.querySelector('#split-to-upload-version').value,
+            signature: root.querySelector('#split-to-upload-signature').value,
+            settings: root.querySelector('#split-to-upload-settings').value
+          };
+          saveMetadataToStorage(metadata);
+        }
+        
+        // Add change listeners to metadata inputs
+        root.querySelector('#split-to-upload-template-type').addEventListener('blur', saveCurrentMetadata);
+        root.querySelector('#split-to-upload-version').addEventListener('blur', saveCurrentMetadata);
+        root.querySelector('#split-to-upload-signature').addEventListener('blur', saveCurrentMetadata);
+        root.querySelector('#split-to-upload-settings').addEventListener('blur', saveCurrentMetadata);
+        
+        // Reset metadata button
+        metadataResetBtn.addEventListener('click', resetMetadataToDefaults);
+        
+        // Validate metadata button
+        metadataValidateBtn.addEventListener('click', function() {
+          const metadata = {
+            templateType: root.querySelector('#split-to-upload-template-type').value,
+            version: root.querySelector('#split-to-upload-version').value,
+            signature: root.querySelector('#split-to-upload-signature').value,
+            settings: root.querySelector('#split-to-upload-settings').value
+          };
+          
+          const errors = validateMetadata(metadata);
+          if (errors.length === 0) {
+            metadataStatus.textContent = 'Metadata validation passed';
+            metadataStatus.className = 'metadata-validation-success';
+            saveCurrentMetadata();
+          } else {
+            metadataStatus.textContent = 'Validation errors: ' + errors.join(', ');
+            metadataStatus.className = 'metadata-validation-error';
+          }
+        });
 
         // Validation logic
         function isValidInput(state) {
@@ -423,14 +612,23 @@
               statusDiv.innerHTML = `Processing region ${regionIndex} of ${Object.keys(groups).length}: <b>${region}</b> (upload rows: ${regionRows.length})...`;
               await new Promise(r => setTimeout(r, 0));
               // --- Custom Upload File Format as XLSX ---
-              // 1. Metadata line (single cell, rest empty)
+              // 1. Metadata line (single cell, rest empty) - now using dynamic values
               const now = new Date();
               const isoTimestamp = now.toISOString();
+              
+              // Get current metadata values from inputs
+              const currentMetadata = {
+                templateType: root.querySelector('#split-to-upload-template-type').value || DEFAULT_METADATA.templateType,
+                version: root.querySelector('#split-to-upload-version').value || DEFAULT_METADATA.version,
+                signature: root.querySelector('#split-to-upload-signature').value || DEFAULT_METADATA.signature,
+                settings: root.querySelector('#split-to-upload-settings').value || DEFAULT_METADATA.settings
+              };
+              
               const metadataLine = [
-                "TemplateType=fptcustom",
-                "Version=2025.0401",
-                "TemplateSignature=Rk9PRA==",
-                "settings=attributeRow=3&contentLanguageTag=en_US&dataRow=4&feedType=113&headerLanguageTag=en_US&isEdit=false&isProcessingSummary=false&labelRow=2&metadataVersion=MatprodVm9MVFByb2RfMTIzNA%3D%3D&primaryMarketplaceId=amzn1.mp.o.ATVPDKIKX0DER&ptds=Rk9PRA%3D%3D&reportProvenance=false&templateIdentifier=5dd18c07-9366-4278-8b7c-ed2710400e03&timestamp=2025-04-01T13%3A22%3A35.302Z"
+                currentMetadata.templateType,
+                currentMetadata.version,
+                currentMetadata.signature,
+                currentMetadata.settings
               ];
 
               // 2. Human-readable labels (array)

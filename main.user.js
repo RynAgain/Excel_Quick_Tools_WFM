@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Excel Quick Tools WFM
 // @namespace    http://Tampermonkey.net/
-// @version      0.147
+// @version      0.148
 // @description  Excel tools and utilities for WFM editor page with modular UI system
 // @match        https://*.cam.wfm.amazon.dev/editor*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js
