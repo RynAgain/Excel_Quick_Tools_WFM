@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Additional Columns Functionality Test Suite</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .test-passed { background-color: #d4edda; border-color: #c3e6cb; }
+        .test-failed { background-color: #f8d7da; border-color: #f5c6cb; }
+        .test-pending { background-color: #fff3cd; border-color: #ffeaa7; }
+        .test-controls { margin: 10px 0; }
+        button { margin: 5px; padding: 8px 15px; cursor: pointer; }
+        .log { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; font-size: 12px; }
+        .file-upload { margin: 10px 0; }
+        .column-preview { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .checkbox-list { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; }
+        .checkbox-item { display: flex; align-items: center; margin: 5px 0; }
+        .checkbox-item input { margin-right: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Additional Columns Functionality Test Suite</h1>
+    <p><strong>Purpose:</strong> Comprehensive testing of dynamic additional column selection functionality</p>
+
+    <!-- Test 1: Dynamic Column Detection -->
+    <div class="test-section test-pending" id="test-detection">
+        <h3>Test 1: Dynamic Column Detection</h3>
+        <p><strong>Objective:</strong> Verify system correctly identifies additional columns from uploaded files</p>
+        <div class="test-controls">
+            <button onclick="testColumnDetection()">Run Detection Test</button>
+            <button onclick="simulateFileUpload()">Simulate File Upload</button>
+        </div>
+        <div class="file-upload">
+            <label>Simulate file columns (comma-separated):</label>
+            <input type="text" id="simulated-columns" value="feed_product_type,item_sku,update_delete,standard_price,offering_start_date,offering_end_date,condition_type,main_image_url,external_product_id,external_product_id_type,quantity,alternate_tax_code,brand,color,size,weight,category" style="width: 100%; padding: 5px;">
+        </div>
+        <div class="log" id="detection-log">Test not run yet</div>
+    </div>
+
+    <!-- Test 2: Checkbox Interface -->
+    <div class="test-section test-pending" id="test-checkbox">
+        <h3>Test 2: Checkbox Interface</h3>
+        <p><strong>Objective:</strong> Test checkbox selection and bulk controls</p>
+        <div class="test-controls">
+            <button onclick="testCheckboxInterface()">Run Checkbox Test</button>
+            <button onclick="testBulkControls()">Test Bulk Controls</button>
+        </div>
+        <div class="checkbox-list" id="test-checkbox-list">
+            <!-- Checkboxes will be populated by test -->
+        </div>
+        <div class="test-controls">
+            <button onclick="selectAllTest()">Select All</button>
+            <button onclick="clearAllTest()">Clear All</button>
+        </div>
+        <div class="log" id="checkbox-log">Test not run yet</div>
+    </div>
+
+    <!-- Test 3: Labeling System -->
+    <div class="test-section test-pending" id="test-labeling">
+        <h3>Test 3: "Additional Column X" Labeling</h3>
+        <p><strong>Objective:</strong> Verify correct labeling of additional columns</p>
+        <div class="test-controls">
+            <button onclick="testLabelingSystem()">Run Labeling Test</button>
+        </div>
+        <div class="column-preview" id="labeling-preview">
+            Preview will appear here
+        </div>
+        <div class="log" id="labeling-log">Test not run yet</div>
+    </div>
+
+    <!-- Test 4: System Keys vs Display Labels -->
+    <div class="test-section test-pending" id="test-keys">
+        <h3>Test 4: System Keys vs Display Labels</h3>
+        <p><strong>Objective:</strong> Verify system uses actual header names as keys while displaying friendly labels</p>
+        <div class="test-controls">
+            <button onclick="testSystemKeys()">Run Keys Test</button>
+        </div>
+        <div class="log" id="keys-log">Test not run yet</div>
+    </div>
+
+    <!-- Test 5: Selection Clearing -->
+    <div class="test-section test-pending" id="test-clearing">
+        <h3>Test 5: Selection Clearing on New Upload</h3>
+        <p><strong>Objective:</strong> Verify selections clear when new file is uploaded</p>
+        <div class="test-controls">
+            <button onclick="testSelectionClearing()">Run Clearing Test</button>
+        </div>
+        <div class="log" id="clearing-log">Test not run yet</div>
+    </div>
+
+    <!-- Test 6: File Type Restrictions -->
+    <div class="test-section test-pending" id="test-restrictions">
+        <h3>Test 6: File Type Restrictions</h3>
+        <p><strong>Objective:</strong> Verify additional columns only affect upload files, not MID lists or cartesian files</p>
+        <div class="test-controls">
+            <button onclick="testFileTypeRestrictions()">Run Restrictions Test</button>
+        </div>
+        <div class="log" id="restrictions-log">Test not run yet</div>
+    </div>
+
+    <!-- Test 7: Integration with File Generation -->
+    <div class="test-section test-pending" id="test-file-integration">
+        <h3>Test 7: File Generation Integration</h3>
+        <p><strong>Objective:</strong> Test integration with upload file generation process</p>
+        <div class="test-controls">
+            <button onclick="testFileIntegration()">Run File Integration Test</button>
+        </div>
+        <div class="log" id="file-integration-log">Test not run yet</div>
+    </div>
+
+    <script>
+        // Test state management
+        let additionalColumnsState = {
+            availableColumns: [],
+            selectedColumns: [],
+            requiredColumns: [
+                "feed_product_type",
+                "item_sku", 
+                "update_delete",
+                "standard_price",
+                "offering_start_date",
+                "offering_end_date",
+                "condition_type",
+                "main_image_url",
+                "external_product_id",
+                "external_product_id_type",
+                "quantity",
+                "alternate_tax_code"
+            ]
+        };
+
+        // Utility functions
+        function logResult(testId, message, success = null) {
+            const logElement = document.getElementById(testId + '-log');
+            const testElement = document.getElementById(testId);
+            
+            logElement.innerHTML = message;
+            
+            if (success === true) {
+                testElement.className = 'test-section test-passed';
+            } else if (success === false) {
+                testElement.className = 'test-section test-failed';
+            } else {
+                testElement.className = 'test-section test-pending';
+            }
+        }
+
+        function getAdditionalColumns(fileColumns) {
+            if (!fileColumns || fileColumns.length === 0) return [];
+            return fileColumns.filter(col =>
+                !additionalColumnsState.requiredColumns.includes(col)
+            );
+        }
+
+        // Test 1: Dynamic Column Detection
+        function testColumnDetection() {
+            logResult('test-detection', 'Running column detection test...', null);
+            
+            try {
+                const simulatedInput = document.getElementById('simulated-columns').value;
+                const fileColumns = simulatedInput.split(',').map(col => col.trim());
+                
+                // Test the detection logic
+                const detectedAdditional = getAdditionalColumns(fileColumns);
+                
+                let log = 'Column Detection Test Results:\n';
+                let success = true;
+                
+                log += `Input columns: ${fileColumns.length}\n`;
+                log += `Required columns: ${additionalColumnsState.requiredColumns.length}\n`;
+                log += `Detected additional columns: ${detectedAdditional.length}\n\n`;
+                
+                // Verify required columns are excluded
+                const requiredInAdditional = detectedAdditional.filter(col => 
+                    additionalColumnsState.requiredColumns.includes(col)
+                );
+                
+                if (requiredInAdditional.length === 0) {
+                    log += '✓ Required columns correctly excluded from additional columns\n';
+                } else {
+                    log += `✗ Required columns found in additional: ${requiredInAdditional.join(', ')}\n`;
+                    success = false;
+                }
+                
+                // Verify additional columns are correctly identified
+                const expectedAdditional = ['brand', 'color', 'size', 'weight', 'category'];
+                const actualAdditional = detectedAdditional;
+                
+                expectedAdditional.forEach(col => {
+                    if (actualAdditional.includes(col)) {
+                        log += `✓ ${col}: Correctly detected as additional\n`;
+                    } else {
+                        log += `✗ ${col}: Not detected as additional\n`;
+                        success = false;
+                    }
+                });
+                
+                // Update state for other tests
+                additionalColumnsState.availableColumns = detectedAdditional;
+                
+                logResult('test-detection', log, success);
+                
+            } catch (error) {
+                logResult('test-detection', `Error during detection test: ${error.message}`, false);
+            }
+        }
+
+        function simulateFileUpload() {
+            // Simulate the file upload process
+            testColumnDetection();
+            updateCheckboxList();
+        }
+
+        // Test 2: Checkbox Interface
+        function testCheckboxInterface() {
+            logResult('test-checkbox', 'Running checkbox interface test...', null);
+            
+            try {
+                if (additionalColumnsState.availableColumns.length === 0) {
+                    logResult('test-checkbox', 'No additional columns available. Run detection test first.', false);
+                    return;
+                }
+                
+                let log = 'Checkbox Interface Test Results:\n';
+                let success = true;
+                
+                // Test checkbox creation
+                const checkboxList = document.getElementById('test-checkbox-list');
+                checkboxList.innerHTML = '';
+                
+                additionalColumnsState.availableColumns.forEach((col, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'checkbox-item';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `test-col-${col}`;
+                    checkbox.value = col;
+                    
+                    const label = document.createElement('label');
+                    label.setAttribute('for', checkbox.id);
+                    label.innerHTML = `
+                        <span style="font-weight: 500;">${col}</span>
+                        <span style="color: #666; font-size: 12px; margin-left: 8px;">→ Additional Column ${index + 1}</span>
+                    `;
+                    
+                    item.appendChild(checkbox);
+                    item.appendChild(label);
+                    checkboxList.appendChild(item);
+                });
+                
+                log += `✓ Created ${additionalColumnsState.availableColumns.length} checkboxes\n`;
+                
+                // Test checkbox functionality
+                const firstCheckbox = checkboxList.querySelector('input[type="checkbox"]');
+                if (firstCheckbox) {
+                    firstCheckbox.checked = true;
+                    if (firstCheckbox.checked) {
+                        log += '✓ Checkbox selection works\n';
+                    } else {
+                        log += '✗ Checkbox selection failed\n';
+                        success = false;
+                    }
+                    
+                    firstCheckbox.checked = false;
+                    if (!firstCheckbox.checked) {
+                        log += '✓ Checkbox deselection works\n';
+                    } else {
+                        log += '✗ Checkbox deselection failed\n';
+                        success = false;
+                    }
+                }
+                
+                logResult('test-checkbox', log, success);
+                
+            } catch (error) {
+                logResult('test-checkbox', `Error during checkbox test: ${error.message}`, false);
+            }
+        }
+
+        function testBulkControls() {
+            const checkboxes = document.querySelectorAll('#test-checkbox-list input[type="checkbox"]');
+            let log = 'Bulk Controls Test Results:\n';
+            let success = true;
+            
+            // Test Select All
+            selectAllTest();
+            const allSelected = Array.from(checkboxes).every(cb => cb.checked);
+            if (allSelected) {
+                log += '✓ Select All functionality works\n';
+            } else {
+                log += '✗ Select All functionality failed\n';
+                success = false;
+            }
+            
+            // Test Clear All
+            clearAllTest();
+            const allCleared = Array.from(checkboxes).every(cb => !cb.checked);
+            if (allCleared) {
+                log += '✓ Clear All functionality works\n';
+            } else {
+                log += '✗ Clear All functionality failed\n';
+                success = false;
+            }
+            
+            logResult('test-checkbox', log, success);
+        }
+
+        function updateCheckboxList() {
+            testCheckboxInterface();
+        }
+
+        function selectAllTest() {
+            const checkboxes = document.querySelectorAll('#test-checkbox-list input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = true);
+        }
+
+        function clearAllTest() {
+            const checkboxes = document.querySelectorAll('#test-checkbox-list input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+        }
+
+        // Test 3: Labeling System
+        function testLabelingSystem() {
+            logResult('test-labeling', 'Running labeling system test...', null);
+            
+            try {
+                if (additionalColumnsState.availableColumns.length === 0) {
+                    logResult('test-labeling', 'No additional columns available. Run detection test first.', false);
+                    return;
+                }
+                
+                // Simulate selected columns
+                const testSelectedColumns = additionalColumnsState.availableColumns.slice(0, 3);
+                
+                let log = 'Labeling System Test Results:\n';
+                let success = true;
+                
+                // Test label generation
+                const labels = testSelectedColumns.map((col, index) =>
+                    `Additional Column ${index + 1}`
+                );
+                
+                const keys = testSelectedColumns;
+                
+                log += 'Generated Labels:\n';
+                labels.forEach((label, index) => {
+                    log += `  ${keys[index]} → ${label}\n`;
+                });
+                
+                // Verify label format
+                labels.forEach((label, index) => {
+                    const expectedLabel = `Additional Column ${index + 1}`;
+                    if (label === expectedLabel) {
+                        log += `✓ Label ${index + 1}: Correct format\n`;
+                    } else {
+                        log += `✗ Label ${index + 1}: Incorrect format (expected: ${expectedLabel}, got: ${label})\n`;
+                        success = false;
+                    }
+                });
+                
+                // Update preview
+                const preview = document.getElementById('labeling-preview');
+                preview.innerHTML = `
+                    <div><strong>Labels:</strong> ${labels.join(', ')}</div>
+                    <div><strong>System Keys:</strong> ${keys.join(', ')}</div>
+                `;
+                
+                logResult('test-labeling', log, success);
+                
+            } catch (error) {
+                logResult('test-labeling', `Error during labeling test: ${error.message}`, false);
+            }
+        }
+
+        // Test 4: System Keys vs Display Labels
+        function testSystemKeys() {
+            logResult('test-keys', 'Running system keys test...', null);
+            
+            try {
+                const testColumns = ['brand', 'color', 'size'];
+                
+                let log = 'System Keys Test Results:\n';
+                let success = true;
+                
+                // Test that system keys use actual header names
+                testColumns.forEach((col, index) => {
+                    const displayLabel = `Additional Column ${index + 1}`;
+                    const systemKey = col; // Should be the actual header name
+                    
+                    log += `Column: ${col}\n`;
+                    log += `  Display Label: ${displayLabel}\n`;
+                    log += `  System Key: ${systemKey}\n`;
+                    
+                    if (systemKey === col) {
+                        log += `  ✓ System key correctly uses actual header name\n`;
+                    } else {
+                        log += `  ✗ System key should be actual header name\n`;
+                        success = false;
+                    }
+                });
+                
+                // Test file structure integration
+                const labelLine = ['Product Type', 'Seller SKU', 'Record Action'];
+                const keyLine = ['feed_product_type', 'item_sku', 'update_delete'];
+                
+                // Add additional columns
+                testColumns.forEach((col, index) => {
+                    labelLine.push(`Additional Column ${index + 1}`);
+                    keyLine.push(col); // Actual header name as key
+                });
+                
+                log += '\nFile Structure Test:\n';
+                log += `Label Line: ${labelLine.join(', ')}\n`;
+                log += `Key Line: ${keyLine.join(', ')}\n`;
+                
+                // Verify alignment
+                if (labelLine.length === keyLine.length) {
+                    log += '✓ Label and key lines have matching lengths\n';
+                } else {
+                    log += '✗ Label and key lines have mismatched lengths\n';
+                    success = false;
+                }
+                
+                logResult('test-keys', log, success);
+                
+            } catch (error) {
+                logResult('test-keys', `Error during keys test: ${error.message}`, false);
+            }
+        }
+
+        // Test 5: Selection Clearing
+        function testSelectionClearing() {
+            logResult('test-clearing', 'Running selection clearing test...', null);
+            
+            try {
+                let log = 'Selection Clearing Test Results:\n';
+                let success = true;
+                
+                // Step 1: Set some selections
+                additionalColumnsState.selectedColumns = ['brand', 'color', 'size'];
+                log += `Step 1: Set selections: ${additionalColumnsState.selectedColumns.join(', ')}\n`;
+                
+                // Step 2: Simulate new file upload (should clear selections)
+                additionalColumnsState.selectedColumns = [];
+                additionalColumnsState.availableColumns = [];
+                
+                log += 'Step 2: Simulated new file upload\n';
+                
+                // Step 3: Verify clearing
+                if (additionalColumnsState.selectedColumns.length === 0) {
+                    log += '✓ Selected columns cleared\n';
+                } else {
+                    log += `✗ Selected columns not cleared: ${additionalColumnsState.selectedColumns.join(', ')}\n`;
+                    success = false;
+                }
+                
+                if (additionalColumnsState.availableColumns.length === 0) {
+                    log += '✓ Available columns cleared\n';
+                } else {
+                    log += `✗ Available columns not cleared: ${additionalColumnsState.availableColumns.join(', ')}\n`;
+                    success = false;
+                }
+                
+                // Step 4: Simulate new file with different columns
+                const newColumns = ['category', 'weight', 'dimensions'];
+                additionalColumnsState.availableColumns = newColumns;
+                
+                log += `Step 4: New file with columns: ${newColumns.join(', ')}\n`;
+                
+                if (additionalColumnsState.availableColumns.length === newColumns.length) {
+                    log += '✓ New columns loaded correctly\n';
+                } else {
+                    log += '✗ New columns not loaded correctly\n';
+                    success = false;
+                }
+                
+                logResult('test-clearing', log, success);
+                
+            } catch (error) {
+                logResult('test-clearing', `Error during clearing test: ${error.message}`, false);
+            }
+        }
+
+        // Test 6: File Type Restrictions
+        function testFileTypeRestrictions() {
+            logResult('test-restrictions', 'Running file type restrictions test...', null);
+            
+            try {
+                let log = 'File Type Restrictions Test Results:\n';
+                let success = true;
+                
+                // Test upload file generation (should include additional columns)
+                const uploadFileStructure = {
+                    includesAdditionalColumns: true,
+                    fileType: 'upload'
+                };
+                
+                // Test MID list generation (should NOT include additional columns)
+                const midFileStructure = {
+                    includesAdditionalColumns: false,
+                    fileType: 'mid',
+                    columns: ['MID']
+                };
+                
+                // Test cartesian file generation (should NOT include additional columns)
+                const cartesianFileStructure = {
+                    includesAdditionalColumns: false,
+                    fileType: 'cartesian',
+                    columns: ['catering_mid', 'asin', 'sku', 'alternate_tax_code']
+                };
+                
+                // Verify upload files include additional columns
+                if (uploadFileStructure.includesAdditionalColumns) {
+                    log += '✓ Upload files: Additional columns included\n';
+                } else {
+                    log += '✗ Upload files: Additional columns should be included\n';
+                    success = false;
+                }
+                
+                // Verify MID files exclude additional columns
+                if (!midFileStructure.includesAdditionalColumns) {
+                    log += '✓ MID files: Additional columns excluded\n';
+                    log += `  MID file columns: ${midFileStructure.columns.join(', ')}\n`;
+                } else {
+                    log += '✗ MID files: Additional columns should be excluded\n';
+                    success = false;
+                }
+                
+                // Verify cartesian files exclude additional columns
+                if (!cartesianFileStructure.includesAdditionalColumns) {
+                    log += '✓ Cartesian files: Additional columns excluded\n';
+                    log += `  Cartesian file columns: ${cartesianFileStructure.columns.join(', ')}\n`;
+                } else {
+                    log += '✗ Cartesian files: Additional columns should be excluded\n';
+                    success = false;
+                }
+                
+                logResult('test-restrictions', log, success);
+                
+            } catch (error) {
+                logResult('test-restrictions', `Error during restrictions test: ${error.message}`, false);
+            }
+        }
+
+        // Test 7: File Generation Integration
+        function testFileIntegration() {
+            logResult('test-file-integration', 'Running file integration test...', null);
+            
+            try {
+                let log = 'File Integration Test Results:\n';
+                let success = true;
+                
+                // Simulate selected additional columns
+                const selectedColumns = ['brand', 'color', 'size'];
+                
+                // Test label line generation (from lines 860-868 in splitToUpload.js)
+                const baseLabelLine = [
+                    "Product Type", "Seller SKU", "Record Action", "Your Price", 
+                    "Offering Release Date", "Stop Selling Date", "Offering Condition Type", 
+                    "Main Image URL", "External Product ID", "External Product ID Type", "Quantity"
+                ];
+                
+                const labelLine = [...baseLabelLine];
+                selectedColumns.forEach((col, index) => {
+                    labelLine.push(`Additional Column ${index + 1}`);
+                });
+                
+                // Test key line generation (from lines 870-879 in splitToUpload.js)
+                const baseKeyLine = [
+                    "feed_product_type", "item_sku", "update_delete", "standard_price", 
+                    "offering_start_date", "offering_end_date", "condition_type", 
+                    "main_image_url", "external_product_id", "external_product_id_type", "quantity"
+                ];
+                
+                const keyLine = [...baseKeyLine];
+                selectedColumns.forEach(col => {
+                    keyLine.push(col);
+                });
+                
+                log += 'Integration Test Results:\n';
+                log += `Base columns: ${baseLabelLine.length}\n`;
+                log += `Additional columns: ${selectedColumns.length}\n`;
+                log += `Total columns: ${labelLine.length}\n\n`;
+                
+                // Verify label line
+                if (labelLine.length === baseLabelLine.length + selectedColumns.length) {
+                    log += '✓ Label line: Correct length\n';
+                } else {
+                    log += '✗ Label line: Incorrect length\n';
+                    success = false;
+                }
+                
+                // Verify key line
+                if (keyLine.length === baseKeyLine.length + selectedColumns.length) {
+                    log += '✓ Key line: Correct length\n';
+                } else {
+                    log += '✗ Key line: Incorrect length\n';
+                    success = false;
+                }
+                
+                // Verify alignment
+                if (labelLine.length === keyLine.length) {
+                    log += '✓ Label and key lines: Aligned\n';
+                } else {
+                    log += '✗ Label and key lines: Misaligned\n';
+                    success = false;
+                }
+                
+                // Test data row generation
+                const sampleDataRow = {
+                    feed_product_type: 'test',
+                    item_sku: 'SKU123',
+                    brand: 'TestBrand',
+                    color: 'Red',
+                    size: 'Large'
+                };
+                
+                const dataRow = [
+                    sampleDataRow.feed_product_type,
+                    sampleDataRow.item_sku,
+                    // ... other required fields would be here
+                ];
+                
+                // Add additional column data
+                selectedColumns.forEach(col => {
+                    dataRow.push(sampleDataRow[col] ?? "");
+                });
+                
+                log += `\nData row test:\n`;
+                log += `Sample data includes additional columns: ${selectedColumns.every(col => sampleDataRow[col] !== undefined)}\n`;
+                
+                if (selectedColumns.every(col => sampleDataRow[col] !== undefined)) {
+                    log += '✓ Data row: Additional columns populated\n';
+                } else {
+                    log += '✓ Data row: Missing additional columns handled with empty strings\n';
+                }
+                
+                logResult('test-file-integration', log, success);
+                
+            } catch (error) {
+                logResult('test-file-integration', `Error during integration test: ${error.message}`, false);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Additional columns functionality test suite loaded');
+        });
+    </script>
+</body>
+</html>

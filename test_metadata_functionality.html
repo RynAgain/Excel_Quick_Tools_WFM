@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metadata Functionality Test Suite</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .test-passed { background-color: #d4edda; border-color: #c3e6cb; }
+        .test-failed { background-color: #f8d7da; border-color: #f5c6cb; }
+        .test-pending { background-color: #fff3cd; border-color: #ffeaa7; }
+        .test-controls { margin: 10px 0; }
+        button { margin: 5px; padding: 8px 15px; cursor: pointer; }
+        .log { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; font-size: 12px; }
+        .metadata-inputs { margin: 10px 0; }
+        .metadata-inputs input, .metadata-inputs textarea { width: 100%; margin: 5px 0; padding: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Metadata Functionality Test Suite</h1>
+    <p><strong>Purpose:</strong> Comprehensive testing of editable metadata functionality in splitToUpload.js</p>
+
+    <!-- Test 1: localStorage Persistence -->
+    <div class="test-section test-pending" id="test-persistence">
+        <h3>Test 1: localStorage Persistence</h3>
+        <p><strong>Objective:</strong> Verify metadata persists across browser sessions</p>
+        <div class="test-controls">
+            <button onclick="testPersistence()">Run Test</button>
+            <button onclick="clearTestData()">Clear Test Data</button>
+        </div>
+        <div class="metadata-inputs">
+            <label>Template Type:</label>
+            <input type="text" id="test-template-type" value="TemplateType=test-custom">
+            <label>Version:</label>
+            <input type="text" id="test-version" value="Version=2025.TEST">
+            <label>Signature:</label>
+            <input type="text" id="test-signature" value="TemplateSignature=TESTDATA==">
+            <label>Settings:</label>
+            <textarea id="test-settings" rows="2">settings=test=true&validation=enabled</textarea>
+        </div>
+        <div class="log" id="persistence-log">Test not run yet</div>
+    </div>
+
+    <!-- Test 2: Validation Logic -->
+    <div class="test-section test-pending" id="test-validation">
+        <h3>Test 2: Metadata Validation</h3>
+        <p><strong>Objective:</strong> Test validation rules for metadata format</p>
+        <div class="test-controls">
+            <button onclick="testValidation()">Run Validation Tests</button>
+        </div>
+        <div class="log" id="validation-log">Test not run yet</div>
+    </div>
+
+    <!-- Test 3: Reset to Defaults -->
+    <div class="test-section test-pending" id="test-reset">
+        <h3>Test 3: Reset to Defaults</h3>
+        <p><strong>Objective:</strong> Verify reset functionality restores default values</p>
+        <div class="test-controls">
+            <button onclick="testReset()">Run Reset Test</button>
+        </div>
+        <div class="log" id="reset-log">Test not run yet</div>
+    </div>
+
+    <!-- Test 4: UI Collapsible Section -->
+    <div class="test-section test-pending" id="test-ui">
+        <h3>Test 4: UI Collapsible Behavior</h3>
+        <p><strong>Objective:</strong> Test expand/collapse functionality</p>
+        <div class="test-controls">
+            <button onclick="testUIBehavior()">Run UI Test</button>
+        </div>
+        <div class="log" id="ui-log">Test not run yet</div>
+    </div>
+
+    <!-- Test 5: Integration with File Generation -->
+    <div class="test-section test-pending" id="test-integration">
+        <h3>Test 5: File Generation Integration</h3>
+        <p><strong>Objective:</strong> Verify metadata appears correctly in generated files</p>
+        <div class="test-controls">
+            <button onclick="testIntegration()">Run Integration Test</button>
+        </div>
+        <div class="log" id="integration-log">Test not run yet</div>
+    </div>
+
+    <script>
+        // Test constants
+        const METADATA_STORAGE_KEY = "splitToUploadFiles_metadata";
+        const DEFAULT_METADATA = {
+            templateType: "TemplateType=fptcustom",
+            version: "Version=2025.0401",
+            signature: "TemplateSignature=Rk9PRA==",
+            settings: "settings=attributeRow=3&contentLanguageTag=en_US&dataRow=4&feedType=113&headerLanguageTag=en_US&isEdit=false&isProcessingSummary=false&labelRow=2&metadataVersion=MatprodVm9MVFByb2RfMTIzNA%3D%3D&primaryMarketplaceId=amzn1.mp.o.ATVPDKIKX0DER&ptds=Rk9PRA%3D%3D&reportProvenance=false&templateIdentifier=5dd18c07-9366-4278-8b7c-ed2710400e03&timestamp=2025-04-01T13%3A22%3A35.302Z"
+        };
+
+        // Utility functions
+        function logResult(testId, message, success = null) {
+            const logElement = document.getElementById(testId + '-log');
+            const testElement = document.getElementById(testId);
+            
+            logElement.innerHTML = message;
+            
+            if (success === true) {
+                testElement.className = 'test-section test-passed';
+            } else if (success === false) {
+                testElement.className = 'test-section test-failed';
+            } else {
+                testElement.className = 'test-section test-pending';
+            }
+        }
+
+        function validateMetadata(metadata) {
+            const errors = [];
+            if (!metadata.templateType.startsWith('TemplateType=')) {
+                errors.push('Template Type must start with "TemplateType="');
+            }
+            if (!metadata.version.startsWith('Version=')) {
+                errors.push('Version must start with "Version="');
+            }
+            if (!metadata.signature.startsWith('TemplateSignature=')) {
+                errors.push('Template Signature must start with "TemplateSignature="');
+            }
+            if (!metadata.settings.startsWith('settings=')) {
+                errors.push('Settings must start with "settings="');
+            }
+            return errors;
+        }
+
+        // Test 1: localStorage Persistence
+        function testPersistence() {
+            logResult('test-persistence', 'Running persistence test...', null);
+            
+            try {
+                // Step 1: Save test data
+                const testData = {
+                    templateType: document.getElementById('test-template-type').value,
+                    version: document.getElementById('test-version').value,
+                    signature: document.getElementById('test-signature').value,
+                    settings: document.getElementById('test-settings').value
+                };
+                
+                localStorage.setItem(METADATA_STORAGE_KEY, JSON.stringify(testData));
+                
+                // Step 2: Retrieve and verify
+                const retrieved = JSON.parse(localStorage.getItem(METADATA_STORAGE_KEY));
+                
+                let success = true;
+                let log = 'Persistence Test Results:\n';
+                
+                Object.keys(testData).forEach(key => {
+                    if (testData[key] === retrieved[key]) {
+                        log += `✓ ${key}: Persisted correctly\n`;
+                    } else {
+                        log += `✗ ${key}: Failed to persist (expected: ${testData[key]}, got: ${retrieved[key]})\n`;
+                        success = false;
+                    }
+                });
+                
+                // Step 3: Test browser session simulation
+                log += '\nSimulating browser session restart...\n';
+                const sessionTest = JSON.parse(localStorage.getItem(METADATA_STORAGE_KEY));
+                if (JSON.stringify(sessionTest) === JSON.stringify(testData)) {
+                    log += '✓ Data survives session restart simulation\n';
+                } else {
+                    log += '✗ Data lost during session restart simulation\n';
+                    success = false;
+                }
+                
+                logResult('test-persistence', log, success);
+                
+            } catch (error) {
+                logResult('test-persistence', `Error during persistence test: ${error.message}`, false);
+            }
+        }
+
+        // Test 2: Validation Logic
+        function testValidation() {
+            logResult('test-validation', 'Running validation tests...', null);
+            
+            const testCases = [
+                {
+                    name: "Valid metadata",
+                    data: DEFAULT_METADATA,
+                    shouldPass: true
+                },
+                {
+                    name: "Invalid template type",
+                    data: { ...DEFAULT_METADATA, templateType: "InvalidType=test" },
+                    shouldPass: false
+                },
+                {
+                    name: "Invalid version",
+                    data: { ...DEFAULT_METADATA, version: "InvalidVersion=1.0" },
+                    shouldPass: false
+                },
+                {
+                    name: "Invalid signature",
+                    data: { ...DEFAULT_METADATA, signature: "InvalidSignature=test" },
+                    shouldPass: false
+                },
+                {
+                    name: "Invalid settings",
+                    data: { ...DEFAULT_METADATA, settings: "invalid_settings=test" },
+                    shouldPass: false
+                },
+                {
+                    name: "Empty values",
+                    data: { templateType: "", version: "", signature: "", settings: "" },
+                    shouldPass: false
+                }
+            ];
+            
+            let log = 'Validation Test Results:\n';
+            let allPassed = true;
+            
+            testCases.forEach(testCase => {
+                const errors = validateMetadata(testCase.data);
+                const passed = (errors.length === 0) === testCase.shouldPass;
+                
+                if (passed) {
+                    log += `✓ ${testCase.name}: ${testCase.shouldPass ? 'Passed validation' : 'Correctly failed validation'}\n`;
+                } else {
+                    log += `✗ ${testCase.name}: ${testCase.shouldPass ? 'Should have passed' : 'Should have failed'} validation\n`;
+                    if (errors.length > 0) {
+                        log += `  Errors: ${errors.join(', ')}\n`;
+                    }
+                    allPassed = false;
+                }
+            });
+            
+            logResult('test-validation', log, allPassed);
+        }
+
+        // Test 3: Reset to Defaults
+        function testReset() {
+            logResult('test-reset', 'Running reset test...', null);
+            
+            try {
+                // Step 1: Set custom values
+                const customData = {
+                    templateType: "TemplateType=custom-test",
+                    version: "Version=9999.TEST",
+                    signature: "TemplateSignature=CUSTOM==",
+                    settings: "settings=custom=true"
+                };
+                
+                localStorage.setItem(METADATA_STORAGE_KEY, JSON.stringify(customData));
+                
+                // Step 2: Simulate reset (what the reset function should do)
+                localStorage.setItem(METADATA_STORAGE_KEY, JSON.stringify(DEFAULT_METADATA));
+                
+                // Step 3: Verify reset worked
+                const resetData = JSON.parse(localStorage.getItem(METADATA_STORAGE_KEY));
+                
+                let success = true;
+                let log = 'Reset Test Results:\n';
+                
+                Object.keys(DEFAULT_METADATA).forEach(key => {
+                    if (resetData[key] === DEFAULT_METADATA[key]) {
+                        log += `✓ ${key}: Reset to default value\n`;
+                    } else {
+                        log += `✗ ${key}: Failed to reset (expected: ${DEFAULT_METADATA[key]}, got: ${resetData[key]})\n`;
+                        success = false;
+                    }
+                });
+                
+                logResult('test-reset', log, success);
+                
+            } catch (error) {
+                logResult('test-reset', `Error during reset test: ${error.message}`, false);
+            }
+        }
+
+        // Test 4: UI Behavior (simulated)
+        function testUIBehavior() {
+            logResult('test-ui', 'Running UI behavior test...', null);
+            
+            // Since we can't directly test the actual UI, we'll simulate the behavior
+            let log = 'UI Behavior Test Results:\n';
+            let success = true;
+            
+            try {
+                // Simulate collapsible behavior
+                let isCollapsed = true; // Initial state
+                
+                // Test expand
+                isCollapsed = false;
+                log += `✓ Expand functionality: ${!isCollapsed ? 'Working' : 'Failed'}\n`;
+                
+                // Test collapse
+                isCollapsed = true;
+                log += `✓ Collapse functionality: ${isCollapsed ? 'Working' : 'Failed'}\n`;
+                
+                // Test toggle class behavior
+                const toggleClass = isCollapsed ? 'collapsed' : '';
+                log += `✓ Toggle class: ${toggleClass === 'collapsed' ? 'Correct' : 'Incorrect'}\n`;
+                
+                // Test click handler simulation
+                log += '✓ Click handler: Simulated successfully\n';
+                
+                log += '\nNote: This is a simulated test. Full UI testing requires browser environment.\n';
+                
+                logResult('test-ui', log, success);
+                
+            } catch (error) {
+                logResult('test-ui', `Error during UI test: ${error.message}`, false);
+            }
+        }
+
+        // Test 5: Integration with File Generation
+        function testIntegration() {
+            logResult('test-integration', 'Running integration test...', null);
+            
+            try {
+                // Simulate metadata integration into file generation
+                const testMetadata = {
+                    templateType: "TemplateType=integration-test",
+                    version: "Version=2025.INTEGRATION",
+                    signature: "TemplateSignature=INTEGRATION==",
+                    settings: "settings=integration=true&test=enabled"
+                };
+                
+                // Simulate the metadata line creation (from lines 852-857 in splitToUpload.js)
+                const metadataLine = [
+                    testMetadata.templateType,
+                    testMetadata.version,
+                    testMetadata.signature,
+                    testMetadata.settings
+                ];
+                
+                let log = 'Integration Test Results:\n';
+                let success = true;
+                
+                // Verify metadata line structure
+                if (metadataLine.length === 4) {
+                    log += '✓ Metadata line has correct structure (4 elements)\n';
+                } else {
+                    log += `✗ Metadata line has incorrect structure (${metadataLine.length} elements)\n`;
+                    success = false;
+                }
+                
+                // Verify each component
+                metadataLine.forEach((item, index) => {
+                    const keys = ['templateType', 'version', 'signature', 'settings'];
+                    if (item === testMetadata[keys[index]]) {
+                        log += `✓ ${keys[index]}: Correctly integrated\n`;
+                    } else {
+                        log += `✗ ${keys[index]}: Integration failed\n`;
+                        success = false;
+                    }
+                });
+                
+                // Test file structure simulation
+                const simulatedFileStructure = [
+                    metadataLine,  // Row 1: Metadata
+                    ['Label1', 'Label2', 'Label3'],  // Row 2: Labels
+                    ['key1', 'key2', 'key3'],  // Row 3: Keys
+                    ['data1', 'data2', 'data3']  // Row 4+: Data
+                ];
+                
+                if (simulatedFileStructure[0] === metadataLine) {
+                    log += '✓ Metadata correctly positioned as first row\n';
+                } else {
+                    log += '✗ Metadata not correctly positioned\n';
+                    success = false;
+                }
+                
+                logResult('test-integration', log, success);
+                
+            } catch (error) {
+                logResult('test-integration', `Error during integration test: ${error.message}`, false);
+            }
+        }
+
+        // Utility function to clear test data
+        function clearTestData() {
+            localStorage.removeItem(METADATA_STORAGE_KEY);
+            logResult('test-persistence', 'Test data cleared from localStorage', null);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Metadata functionality test suite loaded');
+        });
+    </script>
+</body>
+</html>

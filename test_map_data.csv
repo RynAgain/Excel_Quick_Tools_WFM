@@ -1,0 +1,13 @@
+Acro,Region,Store name,MID
+NYC,Northeast,New York Store,MID001
+BOS,Northeast,Boston Store,MID002
+PHI,Northeast,Philadelphia Store,MID003
+ATL,Southeast,Atlanta Store,MID004
+MIA,Southeast,Miami Store,MID005
+ORL,Southeast,Orlando Store,MID006
+CHI,Midwest,Chicago Store,MID007
+DET,Midwest,Detroit Store,MID008
+STL,Midwest,St Louis Store,MID009
+LAX,West,Los Angeles Store,MID010
+SFO,West,San Francisco Store,MID011
+SEA,West,Seattle Store,MID012

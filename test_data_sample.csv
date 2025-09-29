@@ -1,0 +1,6 @@
+feed_product_type,item_sku,update_delete,standard_price,offering_start_date,offering_end_date,condition_type,main_image_url,external_product_id,external_product_id_type,quantity,alternate_tax_code,brand,color,size,weight,category,material,dimensions
+fptcustom,SKU001,Update,29.99,2025-01-01,2025-12-31,New,https://example.com/img1.jpg,ASIN001,ASIN,100,A_GEN_NOTAX,BrandA,Red,Large,2.5,Electronics,Plastic,10x5x3
+fptcustom,SKU002,Update,19.99,2025-01-01,2025-12-31,New,https://example.com/img2.jpg,ASIN002,ASIN,50,A_GEN_NOTAX,BrandB,Blue,Medium,1.8,Home,Metal,8x4x2
+fptcustom,SKU003,Update,39.99,2025-01-01,2025-12-31,New,https://example.com/img3.jpg,ASIN003,ASIN,75,A_GEN_NOTAX,BrandC,Green,Small,0.9,Garden,Wood,6x3x1
+fptcustom,SKU004,Update,49.99,2025-01-01,2025-12-31,New,https://example.com/img4.jpg,ASIN004,ASIN,25,A_GEN_NOTAX,BrandA,Black,XLarge,3.2,Electronics,Plastic,12x6x4
+fptcustom,SKU005,Update,15.99,2025-01-01,2025-12-31,New,https://example.com/img5.jpg,ASIN005,ASIN,200,A_GEN_NOTAX,BrandD,White,Medium,1.1,Kitchen,Ceramic,7x7x2

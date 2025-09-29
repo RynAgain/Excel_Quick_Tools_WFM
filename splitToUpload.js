@@ -103,6 +103,39 @@
             color: #28a745;
             font-weight: 500;
           }
+          #split-to-upload-additional-header:hover {
+            background-color: #f8f9fa;
+          }
+          #split-to-upload-additional-toggle.collapsed {
+            transform: rotate(-90deg);
+          }
+          .additional-column-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            border-bottom: 1px solid #f0f0f0;
+          }
+          .additional-column-item:last-child {
+            border-bottom: none;
+          }
+          .additional-column-item input[type="checkbox"] {
+            margin-right: 8px;
+            width: auto;
+          }
+          .additional-column-item label {
+            flex: 1;
+            margin: 0;
+            cursor: pointer;
+            font-size: 14px;
+          }
+          .column-name {
+            font-weight: 500;
+          }
+          .column-label {
+            color: #666;
+            font-size: 12px;
+            margin-left: 8px;
+          }
         `;
           document.head.appendChild(style);
         }
@@ -243,6 +276,37 @@
             </div>
           </div>
           
+          <!-- Additional Columns Selection Section -->
+          <div id="split-to-upload-additional-section" style="margin-bottom: 12px;">
+            <div id="split-to-upload-additional-header" style="display: flex; align-items: center; cursor: pointer; padding: 8px 0; border-bottom: 1px solid #e0e0e0;">
+              <span id="split-to-upload-additional-toggle" style="margin-right: 8px; font-size: 14px; color: #004E36; transition: transform 0.2s;">▼</span>
+              <label style="margin: 0; font-weight: 500; flex: 1; cursor: pointer;">Additional Columns</label>
+              <span id="split-to-upload-additional-count" style="font-size: 12px; color: #666;">0 selected</span>
+            </div>
+            
+            <div id="split-to-upload-additional-content" style="padding: 12px 0; display: none;">
+              <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; margin-bottom: 12px; font-size: 13px; color: #666;">
+                <strong>Info:</strong> Select additional columns to include in upload files beyond the required ones. Additional columns will be labeled as "Additional Column X" in the output.
+              </div>
+              
+              <div id="split-to-upload-additional-columns" style="max-height: 200px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 5px; padding: 8px;">
+                <div style="text-align: center; color: #666; padding: 20px;">
+                  No additional columns available. Upload a file to see available columns.
+                </div>
+              </div>
+              
+              <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button type="button" id="split-to-upload-additional-select-all" style="background: #6c757d; flex: 1;" disabled>Select All</button>
+                <button type="button" id="split-to-upload-additional-clear-all" style="background: #6c757d; flex: 1;" disabled>Clear All</button>
+              </div>
+              
+              <div id="split-to-upload-additional-preview" style="margin-top: 12px; display: none;">
+                <div style="font-weight: 500; margin-bottom: 8px;">Preview of Additional Columns in Output:</div>
+                <div id="split-to-upload-additional-preview-content" style="background: #f8f9fa; padding: 8px; border-radius: 5px; font-size: 12px; font-family: monospace;"></div>
+              </div>
+            </div>
+          </div>
+          
           <button id="split-to-upload-go" disabled aria-label="Split and download zip">Split & Download Zip</button>
           <button id="split-to-upload-uploadsonly" disabled aria-label="Download upload files only" style="margin-top:6px;">Download Upload Files Only</button>
           <button id="split-to-upload-midsonly" disabled aria-label="Download MID lists only" style="margin-top:6px;">Download MID Lists Only</button>
@@ -267,6 +331,26 @@
         let mapData = null;
         const MAP_STORAGE_KEY = "splitToUploadFiles_mapData";
         const METADATA_STORAGE_KEY = "splitToUploadFiles_metadata";
+        
+        // Additional columns state management
+        let additionalColumnsState = {
+          availableColumns: [],
+          selectedColumns: [],
+          requiredColumns: [
+            "feed_product_type",
+            "item_sku",
+            "update_delete",
+            "standard_price",
+            "offering_start_date",
+            "offering_end_date",
+            "condition_type",
+            "main_image_url",
+            "external_product_id",
+            "external_product_id_type",
+            "quantity",
+            "alternate_tax_code"
+          ]
+        };
         
         // Default metadata structure
         const DEFAULT_METADATA = {
@@ -410,6 +494,130 @@
             metadataStatus.className = 'metadata-validation-error';
           }
         });
+        
+        // Additional columns functions
+        function getAdditionalColumns(fileColumns) {
+          if (!fileColumns || fileColumns.length === 0) return [];
+          return fileColumns.filter(col =>
+            !additionalColumnsState.requiredColumns.includes(col)
+          );
+        }
+        
+        function updateAdditionalColumnsUI() {
+          const additionalSection = root.querySelector('#split-to-upload-additional-section');
+          const additionalContent = root.querySelector('#split-to-upload-additional-content');
+          const additionalColumns = root.querySelector('#split-to-upload-additional-columns');
+          const additionalCount = root.querySelector('#split-to-upload-additional-count');
+          const selectAllBtn = root.querySelector('#split-to-upload-additional-select-all');
+          const clearAllBtn = root.querySelector('#split-to-upload-additional-clear-all');
+          const preview = root.querySelector('#split-to-upload-additional-preview');
+          const previewContent = root.querySelector('#split-to-upload-additional-preview-content');
+          
+          if (additionalColumnsState.availableColumns.length === 0) {
+            additionalSection.style.display = 'none';
+            return;
+          }
+          
+          additionalSection.style.display = 'block';
+          
+          // Clear existing content
+          additionalColumns.innerHTML = '';
+          
+          // Create checkboxes for each additional column
+          additionalColumnsState.availableColumns.forEach((col, index) => {
+            const item = document.createElement('div');
+            item.className = 'additional-column-item';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `additional-col-${col}`;
+            checkbox.value = col;
+            checkbox.checked = additionalColumnsState.selectedColumns.includes(col);
+            
+            const label = document.createElement('label');
+            label.setAttribute('for', checkbox.id);
+            label.innerHTML = `
+              <span class="column-name">${col}</span>
+              <span class="column-label">→ Additional Column ${index + 1}</span>
+            `;
+            
+            checkbox.addEventListener('change', function() {
+              if (this.checked) {
+                if (!additionalColumnsState.selectedColumns.includes(col)) {
+                  additionalColumnsState.selectedColumns.push(col);
+                }
+              } else {
+                additionalColumnsState.selectedColumns = additionalColumnsState.selectedColumns.filter(c => c !== col);
+              }
+              updateAdditionalColumnsCount();
+              updateAdditionalColumnsPreview();
+            });
+            
+            item.appendChild(checkbox);
+            item.appendChild(label);
+            additionalColumns.appendChild(item);
+          });
+          
+          // Enable buttons
+          selectAllBtn.disabled = false;
+          clearAllBtn.disabled = false;
+          
+          updateAdditionalColumnsCount();
+          updateAdditionalColumnsPreview();
+        }
+        
+        function updateAdditionalColumnsCount() {
+          const additionalCount = root.querySelector('#split-to-upload-additional-count');
+          const count = additionalColumnsState.selectedColumns.length;
+          additionalCount.textContent = `${count} selected`;
+        }
+        
+        function updateAdditionalColumnsPreview() {
+          const preview = root.querySelector('#split-to-upload-additional-preview');
+          const previewContent = root.querySelector('#split-to-upload-additional-preview-content');
+          
+          if (additionalColumnsState.selectedColumns.length === 0) {
+            preview.style.display = 'none';
+            return;
+          }
+          
+          preview.style.display = 'block';
+          const labels = additionalColumnsState.selectedColumns.map((col, index) =>
+            `Additional Column ${index + 1}`
+          );
+          const keys = additionalColumnsState.selectedColumns;
+          
+          previewContent.innerHTML = `
+            <div><strong>Labels:</strong> ${labels.join(', ')}</div>
+            <div><strong>System Keys:</strong> ${keys.join(', ')}</div>
+          `;
+        }
+        
+        // Additional columns event handlers
+        const additionalHeader = root.querySelector('#split-to-upload-additional-header');
+        const additionalContent = root.querySelector('#split-to-upload-additional-content');
+        const additionalToggle = root.querySelector('#split-to-upload-additional-toggle');
+        const additionalSelectAllBtn = root.querySelector('#split-to-upload-additional-select-all');
+        const additionalClearAllBtn = root.querySelector('#split-to-upload-additional-clear-all');
+        
+        // Toggle additional columns section
+        additionalHeader.addEventListener('click', function() {
+          const isCollapsed = additionalContent.style.display === 'none';
+          additionalContent.style.display = isCollapsed ? 'block' : 'none';
+          additionalToggle.classList.toggle('collapsed', !isCollapsed);
+        });
+        
+        // Select all additional columns
+        additionalSelectAllBtn.addEventListener('click', function() {
+          additionalColumnsState.selectedColumns = [...additionalColumnsState.availableColumns];
+          updateAdditionalColumnsUI();
+        });
+        
+        // Clear all additional columns
+        additionalClearAllBtn.addEventListener('click', function() {
+          additionalColumnsState.selectedColumns = [];
+          updateAdditionalColumnsUI();
+        });
 
         // Validation logic
         function isValidInput(state) {
@@ -437,14 +645,27 @@
         function updateUI() {
           const state = window.TM_FileState.getState();
           columnSelect.innerHTML = '<option value="">Select column</option>';
+          
+          // Clear additional columns state on new file upload
+          additionalColumnsState.selectedColumns = [];
+          additionalColumnsState.availableColumns = [];
+          
           let valid = isValidInput(state);
           if (valid && state.sheetData && state.sheetData.length > 0) {
-            Object.keys(state.sheetData[0]).forEach(col => {
+            const fileColumns = Object.keys(state.sheetData[0]);
+            
+            // Populate column dropdown
+            fileColumns.forEach(col => {
               const opt = document.createElement('option');
               opt.value = col;
               opt.textContent = col;
               columnSelect.appendChild(opt);
             });
+            
+            // Update additional columns
+            additionalColumnsState.availableColumns = getAdditionalColumns(fileColumns);
+            updateAdditionalColumnsUI();
+            
             columnSelect.disabled = false;
             goBtn.disabled = !columnSelect.value;
             uploadsOnlyBtn.disabled = !columnSelect.value;
@@ -453,6 +674,10 @@
             root.classList.remove('disabled');
             warningDiv.style.display = 'none';
           } else {
+            // Hide additional columns section when no valid file
+            const additionalSection = root.querySelector('#split-to-upload-additional-section');
+            additionalSection.style.display = 'none';
+            
             columnSelect.disabled = true;
             goBtn.disabled = true;
             uploadsOnlyBtn.disabled = true;
@@ -631,17 +856,27 @@
                 currentMetadata.settings
               ];
 
-              // 2. Human-readable labels (array)
+              // 2. Human-readable labels (array) - include additional columns
               const labelLine = [
                 "Product Type", "Seller SKU", "Record Action", "Your Price", "Offering Release Date", "Stop Selling Date",
                 "Offering Condition Type", "Main Image URL", "External Product ID", "External Product ID Type", "Quantity"
               ];
+              
+              // Add additional column labels
+              additionalColumnsState.selectedColumns.forEach((col, index) => {
+                labelLine.push(`Additional Column ${index + 1}`);
+              });
 
-              // 3. System column keys (array)
+              // 3. System column keys (array) - include additional columns
               const keyLine = [
                 "feed_product_type", "item_sku", "update_delete", "standard_price", "offering_start_date", "offering_end_date",
                 "condition_type", "main_image_url", "external_product_id", "external_product_id_type", "quantity"
               ];
+              
+              // Add additional column keys (actual header names)
+              additionalColumnsState.selectedColumns.forEach(col => {
+                keyLine.push(col);
+              });
 
               // 4. Data rows (array of arrays, in order)
               // Helper to robustly format date as YYYY-MM-DD if not blank
@@ -709,19 +944,28 @@
                 }
                 return str; // fallback: return as-is
               }
-              const dataRows = regionRows.map(r => [
-                r.feed_product_type ?? "",
-                r.item_sku ?? "",
-                r.update_delete ?? "",
-                r.standard_price ?? "",
-                formatDateYMD(r.offering_start_date),
-                formatDateYMD(r.offering_end_date),
-                r.condition_type ?? "",
-                r.main_image_url ?? "",
-                r.external_product_id ?? "",
-                r.external_product_id_type ?? "",
-                r.quantity ?? ""
-              ]);
+              const dataRows = regionRows.map(r => {
+                const row = [
+                  r.feed_product_type ?? "",
+                  r.item_sku ?? "",
+                  r.update_delete ?? "",
+                  r.standard_price ?? "",
+                  formatDateYMD(r.offering_start_date),
+                  formatDateYMD(r.offering_end_date),
+                  r.condition_type ?? "",
+                  r.main_image_url ?? "",
+                  r.external_product_id ?? "",
+                  r.external_product_id_type ?? "",
+                  r.quantity ?? ""
+                ];
+                
+                // Add additional column data
+                additionalColumnsState.selectedColumns.forEach(col => {
+                  row.push(r[col] ?? "");
+                });
+                
+                return row;
+              });
 
               // Build worksheet as array-of-arrays
               const aoa = [metadataLine, labelLine, keyLine, ...dataRows];
