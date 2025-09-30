@@ -862,9 +862,21 @@
                 "Offering Condition Type", "Main Image URL", "External Product ID", "External Product ID Type", "Quantity"
               ];
               
-              // Add additional column labels
+              // Add additional column labels with validation
+              console.log('DEBUG: Additional columns before label generation:', {
+                selectedColumns: additionalColumnsState.selectedColumns,
+                selectedCount: additionalColumnsState.selectedColumns.length,
+                selectedTypes: additionalColumnsState.selectedColumns.map(col => typeof col),
+                hasInvalidEntries: additionalColumnsState.selectedColumns.some(col => !col || col.trim() === '')
+              });
+              
               additionalColumnsState.selectedColumns.forEach((col, index) => {
-                labelLine.push(`Additional Column ${index + 1}`);
+                if (col && col.trim() !== '') {
+                  labelLine.push(`Additional Column ${index + 1}`);
+                  console.log(`DEBUG: Added label for column "${col}": Additional Column ${index + 1}`);
+                } else {
+                  console.warn(`DEBUG: Skipping invalid column at index ${index}:`, col);
+                }
               });
 
               // 3. System column keys (array) - include additional columns
@@ -873,9 +885,20 @@
                 "condition_type", "main_image_url", "external_product_id", "external_product_id_type", "quantity"
               ];
               
-              // Add additional column keys (actual header names)
-              additionalColumnsState.selectedColumns.forEach(col => {
-                keyLine.push(col);
+              // Add additional column keys (actual header names) with validation
+              additionalColumnsState.selectedColumns.forEach((col, index) => {
+                if (col && col.trim() !== '') {
+                  keyLine.push(col);
+                  console.log(`DEBUG: Added key for column "${col}" at index ${index}`);
+                } else {
+                  console.warn(`DEBUG: Skipping invalid column key at index ${index}:`, col);
+                }
+              });
+              
+              console.log('DEBUG: Final line lengths:', {
+                labelLineLength: labelLine.length,
+                keyLineLength: keyLine.length,
+                lengthMatch: labelLine.length === keyLine.length
               });
 
               // 4. Data rows (array of arrays, in order)
